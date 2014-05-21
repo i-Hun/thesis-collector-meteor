@@ -1,0 +1,1 @@
+Cheerio = Meteor.require('cheerio');
