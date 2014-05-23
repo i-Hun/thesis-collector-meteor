@@ -15,3 +15,5 @@ bootstrap3-less
 iron-router
 font-awesome
 spin
+ejson
+moment

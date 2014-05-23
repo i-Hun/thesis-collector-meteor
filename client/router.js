@@ -12,16 +12,6 @@ Router.map(function () {
 		layoutTemplate: 'layout',
 		yieldTemplates: {
 			"header": {to: "header"}
-		},
-		data: function() {
-			Meteor.call("scrape", function(err, res) {
-				if (err) {
-					throw new Meteor.Error(400, "Проблемочка");
-				} else {
-					return res;
-				}
-				
-			});
 		}
 	});
 });

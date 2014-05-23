@@ -1,37 +1,61 @@
+Future = Npm.require('fibers/future');
+
+var options = {
+	headers: {
+		'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/34.0.1847.116 Chrome/34.0.1847.116 Safari/537.36'
+	}
+};
+
+function trim (str) {
+	return str.replace(/(\r\n|\n|\r)/gm,"") //удаляем разрывы линий
+						.replace(/ +(?= )/g,'') //удаляем двойные пробелы
+						.replace(/^\s\s*/, '') //удаляем пробелы с начала
+						.replace(/\s\s*$/, ''); //и с конца
+}
+
 Meteor.methods({
-	scrape: function() {
-		Future = Npm.require('fibers/future');
+	scrapeBk55: function() {
+		var futures = _.map(_.range(1, 3), function(num) {
+			var future = new Future();
+			var onComplete = future.resolver();
 
-    var cats = [ 'programming', 'javascript', 'node' ];
+			var url = "http://bk55.ru/news/article/" + num;
 
-    var futures = _.map(cats, function(cat) {
-      var future = new Future();
-      var onComplete = future.resolver();
+			/// Make async http call
+			HTTP.get(url, options, function(error, result) {
+				var $ = Cheerio.load(result.content);
 
-      var url = 'http://reddit.com/r/' + cat;
+				var content = $("#divcontnews").text();
+				if (!content) {
+					onComplete(error, "пустая страница");
+				} else {
+					content = trim(content);
 
-      /// Make async http call
-      HTTP.get(url, function(error, result) {
- 				var $ = Cheerio.load(result.content);
-				var output = [];
-				$('a.title').each(function () {
-					console.log('%s (%s)', $(this).text(), $(this).attr('href'));
-					console.log("____________________________")
-					output.push({
-							title: $(this).text(),
-							link: $(this).attr('href')
-					});
-				});
-        onComplete(error, output);
-      });
+					var rowDate = $("#main>div:first-child>div:nth-child(3)").text();
+					var date = moment(rowDate, "DD MMMM YYYY — HH:mm"); //02 января 2013 — 18:29
 
-      return future;
-    });
+					var response = {
+						url: url,
+						title: $("#main h1").text(),
+						content: content,
+						category: $("#main .rubric").text(),
+						date: new Date(date),
+						views: Number($("#main>div>.view:first-child").text())
+					};
 
-    // wait for all futures to finish
-    Future.wait(futures);
+					onComplete(error, response);
+				}
+			});
 
-    // and grab the results out.
-    return _.invoke(futures, 'get'); 
+			return future;
+		});
+
+		// wait for all futures to finish
+		Future.wait(futures);
+
+		// and grab the results out.
+		return _.invoke(futures, 'get'); 
+
+
 	}
 });

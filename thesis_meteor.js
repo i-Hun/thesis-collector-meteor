@@ -1,5 +1,5 @@
 if (Meteor.isServer) {
-	Meteor.call("scrape", function(err, res) {
+	Meteor.call("scrapeBk55", function(err, res) {
 		if (err) {
 			throw new Meteor.Error(400, "Проблемочка");
 		} else {
